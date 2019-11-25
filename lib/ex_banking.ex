@@ -3,7 +3,6 @@ defmodule ExBanking do
 
   alias ExBanking.Users
   alias ExBanking.Wallet
-  alias ExBanking.Monitor
 
   @type banking_error :: {:error,
     :wrong_arguments                |
