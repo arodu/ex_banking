@@ -21,7 +21,7 @@ defmodule ExBanking.Wallet do
     all = Agent.get(name, & &1)
     case Map.get(all, currency) do
         nil -> 0
-        m -> m
+        m -> Float.round(m/1, 2)
     end
   end
 
