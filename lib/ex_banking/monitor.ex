@@ -1,6 +1,6 @@
 defmodule ExBanking.Monitor do
-
   use GenServer
+  
   alias ExBanking.Users
 
   def start_link(state \\ []) do
@@ -12,8 +12,28 @@ defmodule ExBanking.Monitor do
     {:ok, %{}}
   end
 
-  def init_process(bucket, user) do
+  def process_counter(bucket, user) do
     GenServer.cast(bucket, {:inc, user})
+  end
+
+  def create(bucket, user) do
+    GenServer.call(bucket, {:create, user})
+  end
+
+  def deposit(bucket, user, amount, currency) do
+    GenServer.call(bucket, {:deposit, user, amount, currency})
+  end
+
+  def withdraw(bucket, user, amount, currency) do
+    GenServer.call(bucket, {:withdraw, user, amount, currency})
+  end
+
+  def get_balance(bucket, user, currency) do
+    GenServer.call(bucket, {:balance, user, currency})
+  end
+
+  def send(bucket, from_user, to_user, amount, currency) do
+    GenServer.call(bucket, {:send, from_user, to_user, amount, currency})
   end
 
   @impl true
@@ -22,23 +42,14 @@ defmodule ExBanking.Monitor do
     {:noreply, new_state}
   end
 
-  def create(bucket, user) do
-    GenServer.call(bucket, {:create, user})
-  end
-
   @impl true
   def handle_call({:create, user}, _from, state) do
     out = Users.create(user)
     {:reply, out, state}
   end
 
-  def deposit(bucket, user, amount, currency) do
-    GenServer.call(bucket, {:deposit, user, amount, currency})
-  end
-
   @impl true
   def handle_call({:deposit, user, amount, currency}, _from, state) do
-    
     out = cond do
       counter(:get, state, user)>10 ->
         {:error, :too_many_requests_to_user}
@@ -49,10 +60,6 @@ defmodule ExBanking.Monitor do
 
     new_state = counter(:dec, state, user)
     {:reply, out, new_state}
-  end
-
-  def withdraw(bucket, user, amount, currency) do
-    GenServer.call(bucket, {:withdraw, user, amount, currency})
   end
 
   @impl true
@@ -68,10 +75,6 @@ defmodule ExBanking.Monitor do
     end
   end
 
-  def get_balance(bucket, user, currency) do
-    GenServer.call(bucket, {:balance, user, currency})
-  end
-
   @impl true
   def handle_call({:balance, user, currency}, _from, state) do
     out = cond do
@@ -84,10 +87,6 @@ defmodule ExBanking.Monitor do
 
     new_state = counter(:dec, state, user)
     {:reply, out, new_state}    
-  end
-
-  def send(bucket, from_user, to_user, amount, currency) do
-    GenServer.call(bucket, {:send, from_user, to_user, amount, currency})
   end
 
   @impl true
@@ -126,3 +125,4 @@ defmodule ExBanking.Monitor do
   end
 
 end
+

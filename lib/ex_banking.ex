@@ -1,4 +1,5 @@
 defmodule ExBanking do
+  use Application
 
   alias ExBanking.Monitor
 
@@ -30,9 +31,10 @@ defmodule ExBanking do
     {:error, :wrong_arguments}
   end
 
+
   @spec deposit(user :: String.t, amount :: number, currency :: String.t) :: {:ok, new_balance :: number} | banking_error
   def deposit(user, amount, currency) when is_binary(user) and is_number(amount) and amount>=0 and is_binary(currency) do
-    spawn(fn -> Monitor.init_process(@bucket, user) end)
+    spawn(fn -> Monitor.process_counter(@bucket, user) end)
     Monitor.deposit(@bucket, user, amount, currency)
   end
 
@@ -40,9 +42,10 @@ defmodule ExBanking do
     {:error, :wrong_arguments}
   end
 
+
   @spec withdraw(user :: String.t, amount :: number, currency :: String.t) :: {:ok, new_balance :: number} | banking_error
   def withdraw(user, amount, currency) when is_binary(user) and is_number(amount) and amount>=0 and is_binary(currency) do
-    spawn(fn -> Monitor.init_process(@bucket, user) end)
+    spawn(fn -> Monitor.process_counter(@bucket, user) end)
     Monitor.withdraw(@bucket, user, amount, currency)
   end
 
@@ -53,7 +56,7 @@ defmodule ExBanking do
 
   @spec get_balance(user :: String.t, currency :: String.t) :: {:ok, balance :: number} | banking_error
   def get_balance(user, currency) when is_binary(user) and is_binary(currency) do
-    spawn(fn -> Monitor.init_process(@bucket, user) end)
+    spawn(fn -> Monitor.process_counter(@bucket, user) end)
     Monitor.get_balance(@bucket, user, currency)
   end
 
@@ -64,8 +67,10 @@ defmodule ExBanking do
 
   @spec send(from_user :: String.t, to_user :: String.t, amount :: number, currency :: String.t) :: {:ok, from_user_balance :: number, to_user_balance :: number} | banking_error
   def send(from_user, to_user, amount, currency) when is_binary(from_user) and is_binary(to_user) and is_number(amount) and amount>=0 and is_binary(currency) do
-    spawn(fn -> Monitor.init_process(@bucket, from_user) end)
-    spawn(fn -> Monitor.init_process(@bucket, to_user) end)
+    spawn(fn ->
+      Monitor.process_counter(@bucket, from_user)
+      Monitor.process_counter(@bucket, to_user)
+    end)
     Monitor.send(@bucket, from_user, to_user, amount, currency)
   end
 

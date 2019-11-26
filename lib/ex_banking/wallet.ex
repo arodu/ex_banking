@@ -1,5 +1,4 @@
 defmodule ExBanking.Wallet do
-
   use Agent
 
   def start_link(_state) do
