@@ -18,8 +18,8 @@ defmodule ExBanking.Monitor do
 
   @impl true
   def handle_cast({:inc, user}, state) do
-    state = counter(:inc, state, user)
-    {:noreply, state}
+    new_state = counter(:inc, state, user)
+    {:noreply, new_state}
   end
 
   def create(bucket, user) do
@@ -38,15 +38,17 @@ defmodule ExBanking.Monitor do
 
   @impl true
   def handle_call({:deposit, user, amount, currency}, _from, state) do
-    new_state = counter(:dec, state, user)
-    cond do
-      counter(:get, state, user)<10 ->
-        out = Users.deposit(user, amount, currency)
-        {:reply, out, new_state}                
+    
+    out = cond do
+      counter(:get, state, user)>10 ->
+        {:error, :too_many_requests_to_user}
 
       true -> 
-        {:reply, {:error, :too_many_requests_to_user}, new_state}    
+        Users.deposit(user, amount, currency)
     end
+
+    new_state = counter(:dec, state, user)
+    {:reply, out, new_state}
   end
 
   def withdraw(bucket, user, amount, currency) do
@@ -72,15 +74,16 @@ defmodule ExBanking.Monitor do
 
   @impl true
   def handle_call({:balance, user, currency}, _from, state) do
-    new_state = counter(:dec, state, user)
-    cond do
-      counter(:get, state, user)<10 ->
-        out = Users.get_balance(user, currency)
-        {:reply, out, new_state}
+    out = cond do
+      counter(:get, state, user)>10 ->
+        {:error, :too_many_requests_to_user}
 
       true -> 
-        {:reply, {:error, :too_many_requests_to_user}, new_state}    
+        Users.get_balance(user, currency)
     end
+
+    new_state = counter(:dec, state, user)
+    {:reply, out, new_state}    
   end
 
   def send(bucket, from_user, to_user, amount, currency) do
@@ -101,35 +104,24 @@ defmodule ExBanking.Monitor do
         Users.send(from_user, to_user, amount, currency)
     end
 
-    state = counter(:dec, state, from_user)
-    new_state = counter(:dec, state, to_user)
+    new_state = counter(:dec, state, from_user)
+    new_state = counter(:dec, new_state, to_user)
 
     {:reply, out, new_state}
   end
 
-  defp counter(:inc, state, user) do
-    value = if Map.has_key?(state, user) do
-        Map.get(state, user)
-      else
-        0
-      end
-    Map.put(state, user, (value-1) )
-  end
-
-  defp counter(:dec, state, user) do
-    value = if Map.has_key?(state, user) do
-        Map.get(state, user)
-      else
-        0
-      end
-    Map.put(state, user, (value+1) )
-  end
-
   defp counter(:get, state, user) do
-    if Map.has_key?(state, user) do
-      Map.get(state, user)
-    else
-      0
+    case Map.has_key?(state, user) do
+      true -> Map.get(state, user)
+      false -> 0
+    end
+  end
+
+  defp counter(part, state, user) do
+    value = counter(:get, state, user)
+    case part do
+      :inc -> Map.put(state, user, (value-1) )
+      :dec -> Map.put(state, user, (value+1) )
     end
   end
 

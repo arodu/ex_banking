@@ -1,7 +1,5 @@
 defmodule ExBanking do
 
-
-  alias ExBanking.Users
   alias ExBanking.Monitor
 
   @type banking_error :: {:error,
@@ -74,14 +72,6 @@ defmodule ExBanking do
   def send(_from_user, _to_user, _amount, _currency) do
     {:error, :wrong_arguments}
   end
-
-  def test do
-    create_user("a")
-
-    1..999
-    |> Enum.each(fn _ -> spawn(fn -> deposit("a", 1, "b") end) end)
-
-    deposit("a", 1, "b")
-  end
+  
 
 end
