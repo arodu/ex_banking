@@ -40,13 +40,16 @@ defmodule ExBanking.Users do
   def send(from_user, to_user, amount, currency) do
     cond do
       !(Wallet.exist?(from_user)) ->
-        {:error, :sender_does_not_exist}
+          {:error, :sender_does_not_exist}
 
       !(Wallet.exist?(to_user)) ->
-        {:error, :receiver_does_not_exist}
+          {:error, :receiver_does_not_exist}
+
+      from_user == to_user ->
+          {:error, :wrong_arguments}
 
       amount > Wallet.get(from_user, currency) ->
-        {:error, :not_enough_money}
+          {:error, :not_enough_money}
 
       true -> 
           withdraw(from_user, amount, currency)
