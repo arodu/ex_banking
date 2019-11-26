@@ -6,10 +6,9 @@ defmodule ExBanking.Users do
     if Wallet.exist?(user) do
       {:error, :user_already_exists}
     else
-      Wallet.init(user)
+      Wallet.create(user)
     end
   end
-
 
   def deposit(user, amount, currency) do
     if Wallet.exist?(user) do
